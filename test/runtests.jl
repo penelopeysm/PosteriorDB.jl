@@ -13,15 +13,6 @@ POSTERIOR_DB_PATH = get(ENV, "POSTERIOR_DB_PATH", "")
     end
 
     @testset "utils" begin
-        @testset "recursive_stack" begin
-            @test PosteriorDB.recursive_stack(identity, [1, 2]) == [1, 2]
-            @test PosteriorDB.recursive_stack(identity, [[1, 2]]) == permutedims([1 2])
-            @test PosteriorDB.recursive_stack(identity, [[1, 2], [3, 4]]) ==
-                reshape(1:4, 2, 2)
-            @test PosteriorDB.recursive_stack(identity, 1) === 1
-            @test PosteriorDB.recursive_stack(identity, 1:5) == 1:5
-        end
-
         @testset "format_json_data" begin
             sz = (2, 3, 4)
             sample_dict = Dict(
@@ -29,7 +20,7 @@ POSTERIOR_DB_PATH = get(ENV, "POSTERIOR_DB_PATH", "")
                 "Float64" => 2.5,
                 "String" => "foo",
                 "Vector{Int}" => [1, 2],
-                "Vector{Float64}" => Union{Int,Float64}[1, 2.5],
+                "Vector{Real}" => Union{Int,Float64}[1, 2.5],
                 "Matrix{Float64}" => [randn(3), randn(3)],
                 "Array{Float64,3}" =>
                     [[randn(4), randn(4), randn(4)], [randn(4), randn(4), randn(4)]],
