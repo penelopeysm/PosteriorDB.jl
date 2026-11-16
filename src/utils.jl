@@ -30,35 +30,11 @@ format_json_data(data) = data
 function format_json_data(data::AbstractDict)
     return OrderedDict{String,Any}(k => format_json_data(v) for (k, v) in data)
 end
-format_json_data(data::AbstractVector{<:AbstractDict}) = map(format_json_data, data)
+# Nested arrays are stacked into a single array, with the outermost array as the first dimension.
 function format_json_data(data::AbstractVector)
-    arr = recursive_stack(_asarray, data)
-    dims = ntuple(identity, ndims(arr))
-    arr_perm = permutedims(arr, reverse(dims))
-    S = Base.promote_union(eltype(arr_perm))
-    return convert(Array{S}, arr_perm)
-end
-function format_json_data(data::Vector{Any})
     isempty(data) && return data
-    T = mapreduce(typeof, (S, T) -> Union{S,T}, data)
-    T === Any && return data
-    return format_json_data(convert(Vector{T}, data))
+    elements = map(format_json_data, data)
+    eltype(elements) <: AbstractArray || return elements
+    T = mapreduce(eltype, Base.promote_typejoin, elements)
+    return stack(convert.(Array{T}, elements); dims=1)
 end
-
-_asarray(data::Array) = data
-function _asarray(data::Vector{Any})
-    i = findfirst(!isnothing, data)
-    if i !== nothing && data[i] isa Float64
-        data = map(x -> x isa Int64 ? Float64(x) : x, data)
-    end
-    return map(identity, data)
-end
-
-"""
-    recursive_stack(x::AbstractArray)
-
-If `x` is an array of arrays, recursively stack into a single array whose dimensions are
-ordered with dimensions of the innermost container first and outermost last.
-"""
-recursive_stack(f, x) = x
-recursive_stack(f, x::AbstractArray{<:AbstractArray}) = recursive_stack(f, stack(f, x))
